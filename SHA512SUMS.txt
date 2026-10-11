@@ -1,0 +1,11 @@
+DeepSeek Harness 桌面版 · Windows x64 · 官方安装包校验值
+来源：https://download.deepseek.com/desktop/dsh-latest-windows-x64.exe
+官方更新源：https://download.deepseek.com/dsh-desk/feeds/win-x64/nightly.yml
+
+版本    0.2.0-rc.2
+文件名  deepseek-harness-0.2.0-rc.2-win-x64.exe
+大小    289313640
+
+MD5     7754925fe3c4542123eca76c0e11076e
+SHA256  d61cd8882f8b8a1251144320493ad27920d15139503eba2465b9579eee720cfc
+SHA512  raIlxMQd9ESXgktmViW7QwVLcjBR5JIsrNOu+SpelY8kskdSr2H51/f+ey1EqFI/eIIrKQCuRANMeb5SptRZcg==

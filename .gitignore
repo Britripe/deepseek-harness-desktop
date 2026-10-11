@@ -1,0 +1,5 @@
+# 不要把 276 MiB 的安装包提交进 Git（GitHub 单文件上限 100 MiB）
+# 安装包通过 Release 资产分发
+*.exe
+*.dmg
+dsh-latest-windows-x64.exe
