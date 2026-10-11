@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     同步 DeepSeek Harness 桌面版（Windows x64）官方安装包到 GitHub 仓库。
 
@@ -10,7 +10,7 @@
     幂等：已存在的 Release 或资产不会重复上传。
 
 .PARAMETER Token
-    GitHub Token（需 repo / Contents 读写权限）。也可用环境变量 GH_TOKEN。
+    GitHub Token（需 repo 范围）。也可用环境变量 GH_TOKEN。
 
 .PARAMETER Repo
     GitHub 仓库，格式 owner/name。
@@ -20,7 +20,7 @@
 
 .EXAMPLE
     $env:GH_TOKEN = 'ghp_xxx'
-    pwsh -File .\release.ps1
+    .\release.ps1
 #>
 [CmdletBinding()]
 param(
@@ -32,6 +32,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+
+# Windows PowerShell 5.1 默认可能不用 TLS 1.2
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $FeedUrl   = 'https://download.deepseek.com/dsh-desk/feeds/win-x64/nightly.yml'
 $ApiRoot   = 'https://api.github.com'
@@ -53,47 +56,50 @@ function Get-ApiHeaders {
     }
 }
 
+# 从 nightly.yml 的折叠标量中取值，避免依赖完整 YAML 解析器
+function Get-FoldedValue {
+    param([string]$Text, [string]$Key)
+    $lines = $Text -split "`r?`n"
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        if ($lines[$i] -match ("^\s*" + [regex]::Escape($Key) + ":\s*(>-?|\|)?\s*(.*)$")) {
+            $inline = $Matches[2].Trim()
+            if ($inline) { return $inline }
+            $parts = @()
+            for ($j = $i + 1; $j -lt $lines.Count; $j++) {
+                if ($lines[$j] -match '^\s+\S') { $parts += $lines[$j].Trim() }
+                else { break }
+            }
+            return ($parts -join '')
+        }
+    }
+    return $null
+}
+
 # ---------- 1. 读取官方更新源 ----------
 function Get-OfficialRelease {
     Write-Step "读取官方更新源 $FeedUrl"
     $raw = (Invoke-WebRequest -Uri $FeedUrl -UseBasicParsing -TimeoutSec 30).Content
-
-    # nightly.yml 使用折叠标量 (url: >-)，这里用轻量解析而非完整 YAML 依赖
-    function Get-FoldedValue {
-        param([string]$Text, [string]$Key)
-        $lines = $Text -split "`r?`n"
-        for ($i = 0; $i -lt $lines.Count; $i++) {
-            if ($lines[$i] -match "^\s*$([regex]::Escape($Key)):\s*(>-?|\|)?\s*(.*)$") {
-                $inline = $Matches[2].Trim()
-                if ($inline) { return $inline }
-                $parts = @()
-                for ($j = $i + 1; $j -lt $lines.Count; $j++) {
-                    if ($lines[$j] -match '^\s+\S') { $parts += $lines[$j].Trim() }
-                    else { break }
-                }
-                return ($parts -join '')
-            }
-        }
-        return $null
-    }
 
     $version = Get-FoldedValue $raw 'version'
     $url     = Get-FoldedValue $raw 'path'
     $sha512  = Get-FoldedValue $raw 'sha512'
     $size    = Get-FoldedValue $raw 'size'
 
-    if (-not $version) { throw "无法从更新源解析 version：`n$raw" }
-    if (-not $url)     { throw "无法从更新源解析 path：`n$raw" }
-    if (-not $sha512)  { $sha512 = Get-FoldedValue ($raw -replace '(?m)^path:.*$', '') 'sha512' }
+    if (-not $version) { throw "无法从更新源解析 version" }
+    if (-not $url)     { throw "无法从更新源解析 path" }
+    if (-not $sha512)  { throw "无法从更新源解析 sha512" }
 
     $fileName = Split-Path $url -Leaf
     if (-not $fileName) { $fileName = "deepseek-harness-$version-win-x64.exe" }
 
-    $info = [pscustomobject]@{
+    $sizeVal = 0
+    if ($size) { $sizeVal = [int64]$size }
+
+    $info = New-Object psobject -Property @{
         Version  = $version
         Url      = $url
         Sha512   = $sha512
-        Size     = if ($size) { [int64]$size } else { 0 }
+        Size     = $sizeVal
         FileName = $fileName
         Tag      = "v$version"
     }
@@ -105,7 +111,10 @@ function Get-OfficialRelease {
 function Test-AssetHash {
     param([string]$Path, [string]$ExpectedBase64)
     $hex = (Get-FileHash -Path $Path -Algorithm SHA512).Hash
-    $bytes = for ($i = 0; $i -lt $hex.Length; $i += 2) { [Convert]::ToByte($hex.Substring($i, 2), 16) }
+    $bytes = New-Object byte[] ($hex.Length / 2)
+    for ($i = 0; $i -lt $bytes.Length; $i++) {
+        $bytes[$i] = [Convert]::ToByte($hex.Substring($i * 2, 2), 16)
+    }
     $actual = [Convert]::ToBase64String($bytes)
     return ($actual -eq $ExpectedBase64)
 }
@@ -115,7 +124,7 @@ function Confirm-Repo {
     param([hashtable]$Headers, [string]$FullName)
     Write-Step "检查仓库 $FullName"
     try {
-        $null = Invoke-RestMethod -Uri "$ApiRoot/repos/$FullName" -Headers $Headers -Method Get
+        $null = Invoke-RestMethod -Uri "$ApiRoot/repos/$FullName" -Headers $Headers -Method Get -TimeoutSec 30
         Write-Ok '仓库已存在'
         return
     } catch {
@@ -126,12 +135,12 @@ function Confirm-Repo {
     Write-Warn '仓库不存在，正在创建…'
     $body = @{
         name        = $parts[1]
-        description = 'DeepSeek Harness 桌面版（Windows x64）官方安装包归档'
+        description = 'DeepSeek Harness desktop (Windows x64) official installer archive'
         private     = $false
         has_issues  = $false
         has_wiki    = $false
     } | ConvertTo-Json
-    $null = Invoke-RestMethod -Uri "$ApiRoot/user/repos" -Headers $Headers -Method Post -Body $body -ContentType 'application/json'
+    $null = Invoke-RestMethod -Uri "$ApiRoot/user/repos" -Headers $Headers -Method Post -Body $body -ContentType 'application/json' -TimeoutSec 60
     Write-Ok "已创建 $FullName"
 }
 
@@ -139,7 +148,7 @@ function Confirm-Repo {
 function Get-ExistingRelease {
     param([hashtable]$Headers, [string]$FullName, [string]$Tag)
     try {
-        return Invoke-RestMethod -Uri "$ApiRoot/repos/$FullName/releases/tags/$Tag" -Headers $Headers -Method Get
+        return Invoke-RestMethod -Uri "$ApiRoot/repos/$FullName/releases/tags/$Tag" -Headers $Headers -Method Get -TimeoutSec 30
     } catch {
         if ($_.Exception.Response.StatusCode.value__ -eq 404) { return $null }
         throw
@@ -147,7 +156,7 @@ function Get-ExistingRelease {
 }
 
 # ---------- 主流程 ----------
-$headers = Get-ApiHeaders
+$headers  = Get-ApiHeaders
 $official = Get-OfficialRelease
 
 Confirm-Repo -Headers $headers -FullName $Repo
@@ -155,7 +164,7 @@ Confirm-Repo -Headers $headers -FullName $Repo
 $existing = Get-ExistingRelease -Headers $headers -FullName $Repo -Tag $official.Tag
 
 if ($existing -and $existing.assets.Count -gt 0 -and -not $Force) {
-    Write-Ok "版本 $($official.Tag) 已发布，资产：$($existing.assets.name -join ', ')"
+    Write-Ok "版本 $($official.Tag) 已发布，资产：$(($existing.assets | ForEach-Object { $_.name }) -join ', ')"
     Write-Ok '没有新版本，退出。'
     return
 }
@@ -164,7 +173,7 @@ if ($existing -and $existing.assets.Count -gt 0 -and -not $Force) {
 $local = Join-Path $WorkDir $official.FileName
 $needDownload = $true
 if (Test-Path $local) {
-    Write-Step "发现本地文件，校验 sha512…"
+    Write-Step '发现本地文件，校验 sha512…'
     if (Test-AssetHash -Path $local -ExpectedBase64 $official.Sha512) {
         Write-Ok '本地文件校验通过，复用'
         $needDownload = $false
@@ -184,6 +193,8 @@ if ($needDownload) {
     Write-Ok '校验通过'
 }
 
+$localSize = (Get-Item $local).Length
+
 # 创建 Release
 if (-not $existing) {
     Write-Step "创建 Release $($official.Tag)"
@@ -192,16 +203,14 @@ DeepSeek Harness 桌面版 **$($official.Version)** · Windows x64
 
 | 项目 | 值 |
 | --- | --- |
-| 版本 | ``$($official.Version)`` |
+| 版本 | $($official.Version) |
 | 平台 | Windows x64 |
-| 文件 | ``$($official.FileName)`` |
-| 大小 | $((Get-Item $local).Length) 字节 |
+| 文件 | $($official.FileName) |
+| 大小 | $localSize 字节 |
 
 ### 校验值
 
-``````
-SHA512(base64) $($official.Sha512)
-``````
+SHA512(base64): $($official.Sha512)
 
 ### 官方来源
 
@@ -209,13 +218,13 @@ SHA512(base64) $($official.Sha512)
 - 官方更新源 <https://download.deepseek.com/dsh-desk/feeds/win-x64/nightly.yml>
 "@
     $body = @{
-        tag_name         = $official.Tag
-        name             = "DeepSeek Harness $($official.Version) (Windows x64)"
-        body             = $notes
-        draft            = $false
-        prerelease       = ($official.Version -match '-')
+        tag_name   = $official.Tag
+        name       = "DeepSeek Harness $($official.Version) (Windows x64)"
+        body       = $notes
+        draft      = $false
+        prerelease = ($official.Version -match '-')
     } | ConvertTo-Json
-    $existing = Invoke-RestMethod -Uri "$ApiRoot/repos/$Repo/releases" -Headers $headers -Method Post -Body $body -ContentType 'application/json'
+    $existing = Invoke-RestMethod -Uri "$ApiRoot/repos/$Repo/releases" -Headers $headers -Method Post -Body $body -ContentType 'application/json' -TimeoutSec 60
     Write-Ok "Release 已创建：$($existing.html_url)"
 } else {
     Write-Ok "Release $($official.Tag) 已存在"
@@ -228,12 +237,21 @@ if ($alreadyUploaded.Count -gt 0 -and -not $Force) {
     return
 }
 
-Write-Step "上传资产 $($official.FileName)（$([math]::Round((Get-Item $local).Length / 1MB, 1)) MiB）"
-$uploadUrl = ($existing.upload_url -replace '\{.*$', '') + "?name=$([uri]::EscapeDataString($official.FileName))"
-$uploadHeaders = $headers.Clone()
-$uploadHeaders['Content-Type'] = 'application/vnd.microsoft.portable-executable'
+Write-Step "上传资产 $($official.FileName)（$([math]::Round($localSize / 1MB, 1)) MiB）"
 
-$asset = Invoke-RestMethod -Uri $uploadUrl -Headers $uploadHeaders -Method Post -InFile $local -TimeoutSec 3600
-Write-Ok "上传完成：$($asset.browser_download_url)"
+# 用 curl 流式上传，避免大文件走 Invoke-RestMethod 的内存缓冲
+$uploadUrl = ($existing.upload_url -replace '\{.*$', '') + "?name=" + [uri]::EscapeDataString($official.FileName)
+& curl.exe --fail --retry 3 --retry-delay 3 --progress-bar `
+    -X POST `
+    -H "Authorization: Bearer $Token" `
+    -H 'Accept: application/vnd.github+json' `
+    -H 'X-GitHub-Api-Version: 2022-11-28' `
+    -H "User-Agent: $UserAgent" `
+    -H 'Content-Type: application/vnd.microsoft.portable-executable' `
+    --data-binary "@$local" `
+    $uploadUrl
+if ($LASTEXITCODE -ne 0) { throw "资产上传失败，curl 退出码 $LASTEXITCODE" }
+
 Write-Host ''
-Write-Host "完成。下载页：$($existing.html_url)" -ForegroundColor Green
+Write-Ok "下载页：$($existing.html_url)"
+Write-Ok "永久直链：https://github.com/$Repo/releases/latest/download/$($official.FileName)"
