@@ -3,3 +3,7 @@
 *.exe
 *.dmg
 dsh-latest-windows-x64.exe
+
+# 上传过程产生的临时文件
+upload.log
+_probe.bin

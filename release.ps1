@@ -61,13 +61,18 @@ function Get-FoldedValue {
     param([string]$Text, [string]$Key)
     $lines = $Text -split "`r?`n"
     for ($i = 0; $i -lt $lines.Count; $i++) {
-        if ($lines[$i] -match ("^\s*" + [regex]::Escape($Key) + ":\s*(>-?|\|)?\s*(.*)$")) {
-            $inline = $Matches[2].Trim()
+        if ($lines[$i] -match ("^(\s*)" + [regex]::Escape($Key) + ":\s*(>-?|\|)?\s*(.*)$")) {
+            $indent = $Matches[1].Length
+            $inline = $Matches[3].Trim()
             if ($inline) { return $inline }
             $parts = @()
+            # 折叠标量的续行必须比键所在行缩进更深，否则已经进入下一个键
             for ($j = $i + 1; $j -lt $lines.Count; $j++) {
-                if ($lines[$j] -match '^\s+\S') { $parts += $lines[$j].Trim() }
-                else { break }
+                $next = $lines[$j]
+                if ($next -notmatch '^\s+\S') { break }
+                $nextIndent = ($next -replace '^(\s*).*$', '$1').Length
+                if ($nextIndent -le $indent) { break }
+                $parts += $next.Trim()
             }
             return ($parts -join '')
         }
@@ -78,7 +83,15 @@ function Get-FoldedValue {
 # ---------- 1. 读取官方更新源 ----------
 function Get-OfficialRelease {
     Write-Step "读取官方更新源 $FeedUrl"
-    $raw = (Invoke-WebRequest -Uri $FeedUrl -UseBasicParsing -TimeoutSec 30).Content
+    $resp = Invoke-WebRequest -Uri $FeedUrl -UseBasicParsing -TimeoutSec 30
+    # 该服务器对 .yml 返回二进制内容类型，PS 5.1 下 .Content 会是 byte[]，需显式解码
+    $content = $resp.Content
+    if ($content -is [byte[]]) {
+        $raw = [System.Text.Encoding]::UTF8.GetString($content)
+    } else {
+        $raw = [string]$content
+    }
+    $raw = $raw -replace "`r`n", "`n"
 
     $version = Get-FoldedValue $raw 'version'
     $url     = Get-FoldedValue $raw 'path'
@@ -140,7 +153,8 @@ function Confirm-Repo {
         has_issues  = $false
         has_wiki    = $false
     } | ConvertTo-Json
-    $null = Invoke-RestMethod -Uri "$ApiRoot/user/repos" -Headers $Headers -Method Post -Body $body -ContentType 'application/json' -TimeoutSec 60
+    $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+    $null = Invoke-RestMethod -Uri "$ApiRoot/user/repos" -Headers $Headers -Method Post -Body $bodyBytes -ContentType 'application/json; charset=utf-8' -TimeoutSec 60
     Write-Ok "已创建 $FullName"
 }
 
@@ -222,9 +236,12 @@ SHA512(base64): $($official.Sha512)
         name       = "DeepSeek Harness $($official.Version) (Windows x64)"
         body       = $notes
         draft      = $false
-        prerelease = ($official.Version -match '-')
+        # 不标 prerelease：DSH 当前所有版本都是 rc，标了就永远无法用 /releases/latest 指向最新版
+        prerelease = $false
     } | ConvertTo-Json
-    $existing = Invoke-RestMethod -Uri "$ApiRoot/repos/$Repo/releases" -Headers $headers -Method Post -Body $body -ContentType 'application/json' -TimeoutSec 60
+    # PS 5.1 用 -Body 传字符串会按 ANSI 编码发送，含中文时 GitHub 报 Problems parsing JSON
+    $bodyBytes = [System.Text.Encoding]::UTF8.GetBytes($body)
+    $existing = Invoke-RestMethod -Uri "$ApiRoot/repos/$Repo/releases" -Headers $headers -Method Post -Body $bodyBytes -ContentType 'application/json; charset=utf-8' -TimeoutSec 60
     Write-Ok "Release 已创建：$($existing.html_url)"
 } else {
     Write-Ok "Release $($official.Tag) 已存在"
