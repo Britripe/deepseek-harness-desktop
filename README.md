@@ -7,18 +7,18 @@
 
 ## 下载
 
-**最新版本：`0.2.0-rc.2`**
+**最新版本：`0.2.1-rc.2`**
 
 | 项目 | 值 |
 | --- | --- |
 | 平台 | Windows x64 |
-| 文件名 | `deepseek-harness-0.2.0-rc.2-win-x64.exe` |
-| 大小 | 289,313,640 字节（275.9 MiB） |
+| 文件名 | `deepseek-harness-0.2.1-rc.2-win-x64.exe` |
+| 大小 | 289,385,456 字节（276.0 MiB） |
 
 本版本直链（永久有效）：
 
 ```
-https://github.com/Britripe/deepseek-harness-desktop/releases/download/v0.2.0-rc.2/deepseek-harness-0.2.0-rc.2-win-x64.exe
+https://github.com/Britripe/deepseek-harness-desktop/releases/download/v0.2.1-rc.2/deepseek-harness-0.2.1-rc.2-win-x64.exe
 ```
 
 最新版入口（始终指向最新 Release，可收藏）：
@@ -38,7 +38,20 @@ https://github.com/Britripe/deepseek-harness-desktop/releases/download/v0.2.0-rc
 
 ## 校验值
 
-`0.2.0-rc.2` / `deepseek-harness-0.2.0-rc.2-win-x64.exe`
+### `0.2.1-rc.2`（最新）
+
+`deepseek-harness-0.2.1-rc.2-win-x64.exe`
+
+```
+大小    289385456
+MD5     f8fa3ed15a9519683e16ae8f0810e1c7
+SHA256  72e4a8579f11b5428dd0a1506532777924adba7ecaacc710a7e429085796537f
+SHA512  39POl5osl9PKMqrPXQA52dh/bCV0Z02vOV9cTjOJDHE6gsJwp5bv7lfgB3mVWAKspX7a/w1iTi+8Listdhq45g==
+```
+
+### `0.2.0-rc.2`
+
+`deepseek-harness-0.2.0-rc.2-win-x64.exe`
 
 ```
 大小    289313640
@@ -48,12 +61,12 @@ SHA512  raIlxMQd9ESXgktmViW7QwVLcjBR5JIsrNOu+SpelY8kskdSr2H51/f+ey1EqFI/eIIrKQCu
 ```
 
 其中 SHA-512 与官方更新源 `nightly.yml` 中声明的值一致；SHA-256 也与 GitHub 在资产上传后
-回报的 `digest` 一致，可交叉验证。
+回报的 `digest` 一致；MD5 与官网直链的 ETag 一致，可交叉验证。
 
 PowerShell 校验：
 
 ```powershell
-Get-FileHash .\deepseek-harness-0.2.0-rc.2-win-x64.exe -Algorithm SHA256
+Get-FileHash .\deepseek-harness-0.2.1-rc.2-win-x64.exe -Algorithm SHA256
 ```
 
 ## 更新流程
@@ -71,6 +84,7 @@ $env:GH_TOKEN = 'ghp_xxx'
 
 ## 版本记录
 
-| 版本 | 安装包 | 大小 | Release |
-| --- | --- | --- | --- |
-| 0.2.0-rc.2 | `deepseek-harness-0.2.0-rc.2-win-x64.exe` | 275.9 MiB | [v0.2.0-rc.2](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.0-rc.2) |
+| 版本 | 发布日期 | 安装包 | 大小 | Release |
+| --- | --- | --- | --- | --- |
+| 0.2.1-rc.2 | 2026-10-17 | `deepseek-harness-0.2.1-rc.2-win-x64.exe` | 276.0 MiB | [v0.2.1-rc.2](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.1-rc.2) |
+| 0.2.0-rc.2 | 2026-09-29 | `deepseek-harness-0.2.0-rc.2-win-x64.exe` | 275.9 MiB | [v0.2.0-rc.2](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.0-rc.2) |
