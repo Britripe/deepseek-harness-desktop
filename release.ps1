@@ -169,6 +169,33 @@ function Get-ExistingRelease {
     }
 }
 
+# ---------- 5. 抓取官方 Release 更新说明 ----------
+function Get-UpstreamReleaseNotes {
+    param([string]$Version)
+    $upstreamRepo = 'deepseek-ai/deepseek-harness'
+    $upstreamTag  = "dsh-v$Version"
+    Write-Step "抓取官方发布说明 $upstreamRepo@$upstreamTag"
+    try {
+        # 公开仓库，不需要令牌；失败不影响发布
+        $publicHeaders = @{
+            Accept       = 'application/vnd.github+json'
+            'User-Agent' = $UserAgent
+        }
+        $r = Invoke-RestMethod -Uri "$ApiRoot/repos/$upstreamRepo/releases/tags/$upstreamTag" -Headers $publicHeaders -TimeoutSec 30
+        if ($r.body) {
+            Write-Ok "已获取官方更新说明（$($r.body.Length) 字符）"
+            return [pscustomobject]@{ Body = $r.body; Url = $r.html_url }
+        }
+        Write-Warn '官方 Release 正文为空'
+        return $null
+    } catch {
+        $code = 0
+        if ($_.Exception.Response) { $code = [int]$_.Exception.Response.StatusCode }
+        Write-Warn "未能获取官方更新说明（HTTP $code），仅写入本地生成的信息"
+        return $null
+    }
+}
+
 # ---------- 主流程 ----------
 $headers  = Get-ApiHeaders
 $official = Get-OfficialRelease
@@ -212,7 +239,7 @@ $localSize = (Get-Item $local).Length
 # 创建 Release
 if (-not $existing) {
     Write-Step "创建 Release $($official.Tag)"
-    $notes = @"
+    $meta = @"
 DeepSeek Harness 桌面版 **$($official.Version)** · Windows x64
 
 | 项目 | 值 |
@@ -231,6 +258,14 @@ SHA512(base64): $($official.Sha512)
 - 官方下载页 <https://www.deepseek.com/download/>
 - 官方更新源 <https://download.deepseek.com/dsh-desk/feeds/win-x64/nightly.yml>
 "@
+
+    # 若官方仓库存在对应 Release，把它的更新说明放到正文最前面
+    $upstream = Get-UpstreamReleaseNotes -Version $official.Version
+    if ($upstream) {
+        $notes = "## 官方更新说明`n`n> 摘自 $($upstream.Url)`n`n$($upstream.Body)`n`n---`n`n## 安装包信息`n`n$meta"
+    } else {
+        $notes = $meta
+    }
     $body = @{
         tag_name   = $official.Tag
         name       = "DeepSeek Harness $($official.Version) (Windows x64)"
