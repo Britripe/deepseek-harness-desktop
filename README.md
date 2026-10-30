@@ -9,18 +9,18 @@
 
 ## 下载
 
-**最新版本：`0.2.1-rc.3`**
+**最新版本：`0.2.1-rc.5`**
 
 | 项目 | 值 |
 | --- | --- |
 | 平台 | Windows x64 |
-| 文件名 | `deepseek-harness-0.2.1-rc.3-win-x64.exe` |
-| 大小 | 289,415,960 字节（276.0 MiB） |
+| 文件名 | `deepseek-harness-0.2.1-rc.5-win-x64.exe` |
+| 大小 | 289,408,544 字节（276.0 MiB） |
 
 本版本直链（永久有效）：
 
 ```
-https://github.com/Britripe/deepseek-harness-desktop/releases/download/v0.2.1-rc.3/deepseek-harness-0.2.1-rc.3-win-x64.exe
+https://github.com/Britripe/deepseek-harness-desktop/releases/download/v0.2.1-rc.5/deepseek-harness-0.2.1-rc.5-win-x64.exe
 ```
 
 最新版入口（始终指向最新 Release，可收藏）：
@@ -41,7 +41,18 @@ https://github.com/Britripe/deepseek-harness-desktop/releases/download/v0.2.1-rc
 
 ## 校验值
 
-### `0.2.1-rc.3`（最新）
+### `0.2.1-rc.5`（最新）
+
+`deepseek-harness-0.2.1-rc.5-win-x64.exe`
+
+```
+大小    289408544
+MD5     9a0ee53e77dca25e093f22c7d5ee30d2
+SHA256  50a2fedf234199e3319cdd6b89c4f0aea601a19fe48259c6e3000883f0d2c6f0
+SHA512  gu2dH+aTr678c0P8DGAH/h4B1GaWfQIjpsPrLjl/ukLrQIh6DLVq/MhX4FZvJ8o1GCMocOhix6XbLa6KmtjXXg==
+```
+
+### `0.2.1-rc.3`
 
 `deepseek-harness-0.2.1-rc.3-win-x64.exe`
 
@@ -80,7 +91,7 @@ SHA512  raIlxMQd9ESXgktmViW7QwVLcjBR5JIsrNOu+SpelY8kskdSr2H51/f+ey1EqFI/eIIrKQCu
 PowerShell 校验：
 
 ```powershell
-Get-FileHash .\deepseek-harness-0.2.1-rc.3-win-x64.exe -Algorithm SHA256
+Get-FileHash .\deepseek-harness-0.2.1-rc.5-win-x64.exe -Algorithm SHA256
 ```
 
 ## 更新流程
@@ -101,6 +112,10 @@ $env:GH_TOKEN = 'ghp_xxx'
 
 | 版本 | 发布日期 | 安装包 | 大小 | Release |
 | --- | --- | --- | --- | --- |
+| 0.2.1-rc.5 | 2026-10-30 | `deepseek-harness-0.2.1-rc.5-win-x64.exe` | 276.0 MiB | [v0.2.1-rc.5](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.1-rc.5) |
 | 0.2.1-rc.3 | 2026-10-23 | `deepseek-harness-0.2.1-rc.3-win-x64.exe` | 276.0 MiB | [v0.2.1-rc.3](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.1-rc.3) |
 | 0.2.1-rc.2 | 2026-10-17 | `deepseek-harness-0.2.1-rc.2-win-x64.exe` | 276.0 MiB | [v0.2.1-rc.2](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.1-rc.2) |
 | 0.2.0-rc.2 | 2026-09-29 | `deepseek-harness-0.2.0-rc.2-win-x64.exe` | 275.9 MiB | [v0.2.0-rc.2](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.0-rc.2) |
+
+> 注：官方在 `0.2.1-rc.3` 与 `0.2.1-rc.5` 之间还发布过 `0.2.1-rc.4`（2026-10-28，修复 ACP 模式下诊断输出混入 stdout），
+> 但其桌面端安装包在本仓库建立归档时已被后续版本覆盖，未单独归档。

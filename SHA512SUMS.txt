@@ -4,6 +4,16 @@ DeepSeek Harness 桌面版 · Windows x64 · 官方安装包校验值
 官方更新日志：https://github.com/deepseek-ai/deepseek-harness/releases
 
 ================================================================
+0.2.1-rc.5  (2026-10-30)
+================================================================
+文件名  deepseek-harness-0.2.1-rc.5-win-x64.exe
+大小    289408544
+
+MD5     9a0ee53e77dca25e093f22c7d5ee30d2
+SHA256  50a2fedf234199e3319cdd6b89c4f0aea601a19fe48259c6e3000883f0d2c6f0
+SHA512  gu2dH+aTr678c0P8DGAH/h4B1GaWfQIjpsPrLjl/ukLrQIh6DLVq/MhX4FZvJ8o1GCMocOhix6XbLa6KmtjXXg==
+
+================================================================
 0.2.1-rc.3  (2026-10-23)
 ================================================================
 文件名  deepseek-harness-0.2.1-rc.3-win-x64.exe
