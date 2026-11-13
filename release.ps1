@@ -27,7 +27,8 @@ param(
     [string]$Token = $env:GH_TOKEN,
     [string]$Repo  = 'Britripe/deepseek-harness-desktop',
     [string]$WorkDir = $PSScriptRoot,
-    [switch]$Force
+    [switch]$Force,
+    [switch]$NoProxy
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,6 +40,23 @@ Set-StrictMode -Version Latest
 $FeedUrl   = 'https://download.deepseek.com/dsh-desk/feeds/win-x64/nightly.yml'
 $ApiRoot   = 'https://api.github.com'
 $UserAgent = 'dsh-desktop-archiver'
+
+# curl 不读取 Windows 系统代理（只认 HTTP(S)_PROXY 环境变量）。
+# 在启用了系统代理的机器上若不沿用，会表现为「Could not resolve host」。
+function Get-SystemProxy {
+    foreach ($v in @($env:HTTPS_PROXY, $env:https_proxy, $env:ALL_PROXY, $env:HTTP_PROXY, $env:http_proxy)) {
+        if ($v) { return $v }
+    }
+    try {
+        $reg = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -ErrorAction Stop
+        if ($reg.ProxyEnable -eq 1 -and $reg.ProxyServer) {
+            $s = [string]$reg.ProxyServer
+            if ($s -notmatch '^[a-zA-Z][a-zA-Z0-9+.-]*://') { $s = "http://$s" }
+            return $s
+        }
+    } catch { }
+    return $null
+}
 
 function Write-Step { param([string]$m) Write-Host "==> $m" -ForegroundColor Cyan }
 function Write-Ok   { param([string]$m) Write-Host "    $m" -ForegroundColor Green }
@@ -200,6 +218,16 @@ function Get-UpstreamReleaseNotes {
 $headers  = Get-ApiHeaders
 $official = Get-OfficialRelease
 
+# curl 代理参数：下载与上传共用；-NoProxy 可关闭
+$curlProxyArgs = @()
+if (-not $NoProxy) {
+    $sysProxy = Get-SystemProxy
+    if ($sysProxy) {
+        $curlProxyArgs = @('-x', $sysProxy)
+        Write-Host "    检测到代理，curl 将沿用：$sysProxy" -ForegroundColor DarkGray
+    }
+}
+
 Confirm-Repo -Headers $headers -FullName $Repo
 
 $existing = Get-ExistingRelease -Headers $headers -FullName $Repo -Tag $official.Tag
@@ -225,7 +253,7 @@ if (Test-Path $local) {
 
 if ($needDownload) {
     Write-Step "下载 $($official.Url)"
-    & curl.exe -L --fail --retry 3 --retry-delay 2 -o $local $official.Url
+    & curl.exe @curlProxyArgs -L --fail --retry 3 --retry-delay 2 -o $local $official.Url
     if ($LASTEXITCODE -ne 0) { throw "下载失败，curl 退出码 $LASTEXITCODE" }
     Write-Step '校验下载结果 sha512…'
     if (-not (Test-AssetHash -Path $local -ExpectedBase64 $official.Sha512)) {
@@ -293,7 +321,7 @@ Write-Step "上传资产 $($official.FileName)（$([math]::Round($localSize / 1M
 
 # 用 curl 流式上传，避免大文件走 Invoke-RestMethod 的内存缓冲
 $uploadUrl = ($existing.upload_url -replace '\{.*$', '') + "?name=" + [uri]::EscapeDataString($official.FileName)
-& curl.exe --fail --retry 3 --retry-delay 3 --progress-bar `
+& curl.exe @curlProxyArgs --fail --retry 3 --retry-delay 3 --progress-bar `
     -X POST `
     -H "Authorization: Bearer $Token" `
     -H 'Accept: application/vnd.github+json' `
