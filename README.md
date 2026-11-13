@@ -9,18 +9,18 @@
 
 ## 下载
 
-**最新版本：`0.2.2-rc.1`**
+**最新版本：`0.2.2-rc.3`**
 
 | 项目 | 值 |
 | --- | --- |
 | 平台 | Windows x64 |
-| 文件名 | `deepseek-harness-0.2.2-rc.1-win-x64.exe` |
-| 大小 | 293,425,336 字节（279.8 MiB） |
+| 文件名 | `deepseek-harness-0.2.2-rc.3-win-x64.exe` |
+| 大小 | 299,595,752 字节（285.7 MiB） |
 
 本版本直链（永久有效）：
 
 ```
-https://github.com/Britripe/deepseek-harness-desktop/releases/download/v0.2.2-rc.1/deepseek-harness-0.2.2-rc.1-win-x64.exe
+https://github.com/Britripe/deepseek-harness-desktop/releases/download/v0.2.2-rc.3/deepseek-harness-0.2.2-rc.3-win-x64.exe
 ```
 
 最新版入口（始终指向最新 Release，可收藏）：
@@ -41,26 +41,30 @@ https://github.com/Britripe/deepseek-harness-desktop/releases/download/v0.2.2-rc
 
 ## 校验值
 
-### `0.2.2-rc.1`（最新）
+### `0.2.2-rc.3`（最新）
 
-`deepseek-harness-0.2.2-rc.1-win-x64.exe`
+`deepseek-harness-0.2.2-rc.3-win-x64.exe`
 
 ```
-大小    293425336
-MD5     ecd1d9880f68ec91a63b4936163bfc44
-SHA256  830947f8996dc05d991ca9133fff4d3400073e47b9cfa6507754867e79482b23
-SHA512  swcK0J6ofGkaAWLRpOes2ca7CWO8vuM5Vp0FRnQ/DG3q+Z+OhvsgLz3hIiSYpRUETY+fEz+Ww86fNa0jiVIifw==
+大小    299595752
+MD5     a00249bd408a1341c8c453294c03c506
+SHA256  786c9b26050c35b62c7be6a01dee2541dc1c2c5d9bd5f2dbe77beeeb8d50704e
+SHA512  GiJf8kx+C7eoiZ0xQSYBcTyh5xmXQl+vh63U6uSm963McK1AkMgB8PydzuekWdUY7hyURvhVMHANM4pn+tCKzQ==
 ```
 
 历史版本的完整校验值见 [`SHA512SUMS.txt`](SHA512SUMS.txt)。
 
 其中 SHA-512 与官方更新源 `nightly.yml` 中声明的值一致；SHA-256 也与 GitHub 在资产上传后
-回报的 `digest` 一致；MD5 与官网直链的 ETag 一致，可交叉验证。
+回报的 `digest` 一致；MD5 与官方**版本化地址**的 ETag 一致，可交叉验证。
+
+> ⚠️ 注意：`0.2.2-rc.3` 官方是 **`stagingPercentage: 10`** 的分阶段发布，所以
+> `dsh-latest-windows-x64.exe` 这个别名当时仍指向 `0.2.2-rc.2`（299,659,528 字节）。
+> 想确认拿到的是 rc.3，请用上面的版本化地址或核对本文档的校验值，不要只看 `dsh-latest`。
 
 PowerShell 校验：
 
 ```powershell
-Get-FileHash .\deepseek-harness-0.2.2-rc.1-win-x64.exe -Algorithm SHA256
+Get-FileHash .\deepseek-harness-0.2.2-rc.3-win-x64.exe -Algorithm SHA256
 ```
 
 ## 更新流程
@@ -75,17 +79,22 @@ $env:GH_TOKEN = 'ghp_xxx'
 .\release.ps1
 ```
 
-可选参数：`-Repo owner/name`、`-Force`（已存在也补齐资产）、`-Token`。
+可选参数：`-Repo owner/name`、`-Force`（已存在也补齐资产）、`-Token`、`-NoProxy`。
+
+> 脚本会自动沿用 Windows 系统代理（curl 本身不读取系统代理设置）。若代理反而导致失败，
+> 加 `-NoProxy` 走直连。
 
 ## 版本记录
 
 | 版本 | 发布日期 | 安装包 | 大小 | Release |
 | --- | --- | --- | --- | --- |
+| 0.2.2-rc.3 | 2026-11-13 | `deepseek-harness-0.2.2-rc.3-win-x64.exe` | 285.7 MiB | [v0.2.2-rc.3](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.2-rc.3) |
 | 0.2.2-rc.1 | 2026-11-04 | `deepseek-harness-0.2.2-rc.1-win-x64.exe` | 279.8 MiB | [v0.2.2-rc.1](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.2-rc.1) |
 | 0.2.1-rc.5 | 2026-10-30 | `deepseek-harness-0.2.1-rc.5-win-x64.exe` | 276.0 MiB | [v0.2.1-rc.5](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.1-rc.5) |
 | 0.2.1-rc.3 | 2026-10-23 | `deepseek-harness-0.2.1-rc.3-win-x64.exe` | 276.0 MiB | [v0.2.1-rc.3](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.1-rc.3) |
 | 0.2.1-rc.2 | 2026-10-17 | `deepseek-harness-0.2.1-rc.2-win-x64.exe` | 276.0 MiB | [v0.2.1-rc.2](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.1-rc.2) |
 | 0.2.0-rc.2 | 2026-09-29 | `deepseek-harness-0.2.0-rc.2-win-x64.exe` | 275.9 MiB | [v0.2.0-rc.2](https://github.com/Britripe/deepseek-harness-desktop/releases/tag/v0.2.0-rc.2) |
 
-> 说明：官方在 `0.2.1-rc.3` 与 `0.2.1-rc.5` 之间还发布过 `0.2.1-rc.4`（2026-10-28，修复 ACP 模式下诊断输出混入 stdout），
-> 但本仓库未单独归档该版本，其桌面端安装包已被后续版本覆盖。
+> 未归档的中间版本：`0.2.1-rc.4`（2026-10-28）、`0.2.2-rc.2`（2026-11-11，Git Worktree 审阅、
+> 具名多层子代理、网页搜索改 DeepSeek Search API 等大变更）。它们的桌面端安装包已被后续版本覆盖，
+> 官方不再提供独立下载地址。
