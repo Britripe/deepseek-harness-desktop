@@ -57,9 +57,9 @@ SHA512  wWySRp7Hk5gcH324jBxAc7KV0mniHzQDofyQexOJMIAWXBkgHTsRCr3IrdwX1XO8OIhDZsLY
 其中 SHA-512 与官方更新源 `nightly.yml` 中声明的值一致；SHA-256 也与 GitHub 在资产上传后
 回报的 `digest` 一致；MD5 与官方**版本化地址**的 ETag 一致，可交叉验证。
 
-> ⚠️ 注意：`0.2.2-rc.5` 官方是 **`stagingPercentage: 10`** 的分阶段发布，所以
-> `dsh-latest-windows-x64.exe` 这个别名此时仍指向 `0.2.2-rc.3`（299,595,752 字节）。
-> 想确认拿到的是 rc.5，请用上面的版本化地址或核对本文档的校验值，不要只看 `dsh-latest`。
+> ✅ `0.2.2-rc.5` 最初是 `stagingPercentage: 10` 的分阶段发布，2026-11-19 已全量放量
+> （变为 100）。`dsh-latest-windows-x64.exe` 的 ETag 已变为
+> `02190dbda3adba4d82c7dfcf28ed2fb0`，与本文档记录的 MD5 一致，交叉验证通过。
 
 PowerShell 校验：
 
